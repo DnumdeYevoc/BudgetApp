@@ -17,6 +17,7 @@ class MainApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       
       theme: ThemeData(
+        
         useMaterial3: true,
         brightness: Brightness.light,
         colorScheme: ColorScheme(
@@ -29,7 +30,12 @@ class MainApp extends StatelessWidget {
           surface: const Color.fromARGB(255, 204, 192, 79),
           onSurface: Colors.black54,
           brightness: Brightness.light,
-        )
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.black87,
+          selectedItemColor: Colors.yellow,
+          unselectedItemColor: Colors.white,
+        ),
         ),
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -37,7 +43,12 @@ class MainApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.yellow,
           brightness: Brightness.dark
-        )
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.black87,
+          selectedItemColor: Colors.yellow,
+          unselectedItemColor: Colors.white,
+        ),
       ),
       themeMode: ThemeMode.system,
       home: const WidgetTree(),
