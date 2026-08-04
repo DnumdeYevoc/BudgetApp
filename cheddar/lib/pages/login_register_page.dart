@@ -60,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
     bool isHidden,
   ){
     return TextField(
-
       obscureText: isHidden,
       controller: controller,
       decoration: InputDecoration(
@@ -118,8 +117,6 @@ class _LoginPageState extends State<LoginPage> {
                 Icon(Icons.monetization_on_sharp, color: Theme.of(context).colorScheme.primary, size: 50,),
                 _title(),
               ]
-              
-              
             ),
             
             _entryField('email', _controllerEmail, false),
