@@ -20,13 +20,13 @@ class _HomePageState extends State<HomePage> {
             Icon(Icons.monetization_on_outlined),
             Icon(Icons.celebration)],
 
-          outerData: [100,500,400],
+          outerData: [100,500],
           outerName: 'Expenses',
-          outerNameData: ['Groceries', 'Rent', 'Bribery'],
+          outerNameData: ['Groceries', 'Rent'],
           outerIconData: [
             Icon(Icons.fastfood_outlined),
             Icon(Icons.home),
-            Icon(Icons.payments)],
+            ],
 
           radius: 9,
         );    

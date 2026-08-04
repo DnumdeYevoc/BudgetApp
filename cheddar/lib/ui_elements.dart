@@ -48,9 +48,14 @@ class _MyPieChartState extends State<MyPieChart> {
       true; //whether or not the touch event is outside the outer radius
   bool toggleOn = false;
   int prevTouchIndex = -1;
+  bool oneTouch = true;
 
   double outerSum = -1;
   double innerSum = -1;
+  double diff = -1;
+
+  int innerLength = -1;
+  int outerLength = -1;//lengths set before adding filler
 
   //prebuild sections for dynamic editing
   List<PieChartSectionData> innerSections = [];
@@ -59,23 +64,55 @@ class _MyPieChartState extends State<MyPieChart> {
   bool innerFiller = false; //is there an inner filler section
   bool outerFiller = false; //is there an outer filler section
 
-  
-
   void _addFillerSection( bool isInner, double val){
     setState(() {
       if (isInner == true){ //add to inner //overbudget
-          widget.innerData.add(val);
-          widget.innerNameData.add('Over Spent');
-          widget.innerIconData.add(Icon(Icons.cancel));
-          innerFiller = true;
+        innerSections.add(
+          PieChartSectionData(
+          showTitle: false,
+          value: val,
+          color: const Color.fromARGB(70, 255, 18, 1),
+          radius: widget.radius * 4 *(
+            (prevTouchIndex == innerLength)
+            ? 0.8
+            : 0.5
+          ),
+          ),
+        );
+        widget.innerNameData.add('Over Spent');
+        widget.innerData.add(val);
           
       } else {// add to outer //underbudget
-          widget.outerData.add(val);
+        outerSections.add(
+          PieChartSectionData(
+          showTitle: false,
+          value: val,
+          color: const Color.fromARGB(160, 157, 255, 132),
+          radius: widget.radius * 4 *(
+            (prevTouchIndex == outerLength)
+            ? 0.8
+            : 0.5
+          )
+          ),
+        );
           widget.outerNameData.add('Saved');
-          widget.outerIconData.add(Icon(Icons.check));
-          outerFiller = true;
+          widget.outerData.add(val);
       }
     });
+  }
+  @override
+  void initState(){
+    super.initState();
+    innerSum = widget.innerData.fold(0, (previousValue, element) => previousValue + element);
+    outerSum = widget.outerData.fold(0, (previousValue, element) => previousValue + element);
+
+    innerLength = widget.innerData.length;
+
+    outerLength = widget.outerData.length;
+
+     if (innerSum != outerSum ){
+        diff = (innerSum-outerSum).abs();
+     }
   }
 
   void _handlePieTouch(FlTouchEvent event, PieTouchResponse? pieTouchResponse) {
@@ -84,10 +121,23 @@ class _MyPieChartState extends State<MyPieChart> {
           pieTouchResponse == null ||
           pieTouchResponse.touchedSection == null) {
         touchedIndex = -1;
-
+        oneTouch = true;        
         return;
       }
       touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+  
+      if (oneTouch == true){
+        oneTouch = false;
+        if (prevTouchIndex == touchedIndex) {
+            prevTouchIndex = -1;
+            toggleOn = false;
+            return;
+          } else {
+            prevTouchIndex = touchedIndex;
+            toggleOn = true;
+            return;
+          }
+      }
 
       final renderBox = context.findRenderObject();
       if (renderBox is! RenderBox) {
@@ -109,30 +159,25 @@ class _MyPieChartState extends State<MyPieChart> {
   Widget _innerPieChart() {
     //premake sections:
     innerSections = [
-      for (int i = 0; i < widget.innerData.length; i++)
-        PieChartSectionData(
+    for (int i = 0; i < innerLength ; i++) 
+      PieChartSectionData(
           showTitle: false,
           badgeWidget: widget.innerIconData[i],
           value: widget.innerData[i],
-          color: Colors.green[(i + 5) * 100],
-          radius: (outRadius)
-            ? widget.radius * 4
-            : (inRadius && !toggleOn)
-            ? widget.radius * 4 * 1.2
-            : widget.radius *
-            4 *
-            ((prevTouchIndex == i && inRadius && toggleOn)
+          color: Colors.yellow[(i + 6) * 100],
+          radius: widget.radius * 4 *(
+            (!inRadius)
+            ? 1
+            : (!toggleOn)
+            ? 1.2
+            :(prevTouchIndex == i)
             ? 1.4
-            : 1.0),
+            : 1
+            ),
           ),
         ];
-
-    innerSum = widget.innerData.fold(
-      0,
-      (previousValue, element) => previousValue + element,
-    );
-    if (innerFiller == true){
-      innerSum -= widget.innerData.last;
+    if (diff != -1 && innerSum < outerSum){
+      _addFillerSection(true,diff);
     }
     return IgnorePointer(
       ignoring: !inRadius,
@@ -157,31 +202,27 @@ class _MyPieChartState extends State<MyPieChart> {
   Widget _outerPieChart() {
     //premake sections:
     outerSections = [
-    for (int i = 0; i < widget.outerData.length; i++)
+    for (int i = 0; i < outerLength; i++)
       PieChartSectionData(
         showTitle: false,
         badgeWidget: widget.outerIconData[i],
         value: widget.outerData[i],
-        color: Colors.red[(i + 5) * 100],
-        radius: (outRadius)
-          ? widget.radius * 4
-          : (!inRadius && !toggleOn)
-          ? widget.radius * 4 * 1.2
-          : widget.radius *
-          4 *
-          ((prevTouchIndex == i && !inRadius && toggleOn)
-          ? 1.4
-          : 1.0),
-            ),
+        color: Colors.orange[(i + 8) * 100],
+        radius: widget.radius * 4 *(
+            (outRadius)
+            ? 1
+            :(inRadius)
+            ?1
+            : (!toggleOn)
+            ? 1.2
+            :(prevTouchIndex == i)
+            ? 1.4
+            : 1
+            )
+          ),
         ];
-
-    outerSum = widget.outerData.fold(
-      0,
-      (previousValue, element) => previousValue + element,
-    );
-
-    if (outerFiller == true){
-      outerSum -= widget.outerData.last;
+    if (diff != -1 && innerSum > outerSum){
+      _addFillerSection(false,diff);
     }
     return PieChart(
       swapAnimationDuration: const Duration(milliseconds: 200),
@@ -230,39 +271,7 @@ class _MyPieChartState extends State<MyPieChart> {
           : widget.outerData[prevTouchIndex].toStringAsFixed(widget.dec);
       centerTitle = sliceName;
       centerSubtitle = ' \$$sliceAmount';
-    }
-    setState(() {
-      if (touchedIndex != -1) {
-        if (prevTouchIndex == touchedIndex) {
-          prevTouchIndex = -1;
-          toggleOn = false;
-        } else {
-          prevTouchIndex = touchedIndex;
-          toggleOn = true;
-        }
-        ;
-      } else {
-        toggleOn = false;
-      }
-
-    
-    //auto filler sections
-      print(innerFiller);
-      print(outerFiller);
-      
-      if (innerSum != outerSum && innerFiller == false && outerFiller == false){
-        print('here');
-        double diff = (innerSum-outerSum).abs();
-        if (innerSum > outerSum){ //under budget
-          _addFillerSection(false, diff);
-        } else {// over budget
-          _addFillerSection(true, diff);
-          
-        }
-      }
-    
-    });
-    
+    }    
     
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -272,7 +281,7 @@ class _MyPieChartState extends State<MyPieChart> {
           centerTitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 2 * widget.radius,
+            fontSize: 1.5*widget.radius,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -281,7 +290,7 @@ class _MyPieChartState extends State<MyPieChart> {
           centerSubtitle,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 2 * widget.radius,
+            fontSize: widget.radius,
             fontWeight: FontWeight.w500,
           ),
         ),
