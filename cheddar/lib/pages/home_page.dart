@@ -15,12 +15,12 @@ class _HomePageState extends State<HomePage> {
         MyPieChart(
           innerData: [1000,100],
           innerName: 'Income',
-          innerNameData: ['Paycheque','Birthday Money'],
+          innerNameData: ['Paycheque Wow this was auto sized','Birthday Money'],
           innerIconData: [
             Icon(Icons.monetization_on_outlined),
             Icon(Icons.celebration)],
 
-          outerData: [100,500],
+          outerData: [300,500],
           outerName: 'Expenses',
           outerNameData: ['Groceries', 'Rent'],
           outerIconData: [
@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
             Icon(Icons.home),
             ],
 
-          radius: 9,
+          radius: 10,
         );    
   }
 }

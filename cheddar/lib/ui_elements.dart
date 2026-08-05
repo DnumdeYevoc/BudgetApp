@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -44,11 +44,14 @@ class _MyPieChartState extends State<MyPieChart> {
   int touchedIndex = -1;
   bool inRadius =
       false; //whether or not the touch event is inside the inner radius
+  bool prevInRadius = false;
+      
   bool outRadius =
       true; //whether or not the touch event is outside the outer radius
   bool toggleOn = false;
   int prevTouchIndex = -1;
   bool oneTouch = true;
+  Offset prevTouchPos = Offset(0,0);
 
   double outerSum = -1;
   double innerSum = -1;
@@ -73,7 +76,7 @@ class _MyPieChartState extends State<MyPieChart> {
           value: val,
           color: const Color.fromARGB(70, 255, 18, 1),
           radius: widget.radius * 4 *(
-            (prevTouchIndex == innerLength)
+            (prevTouchIndex == innerLength && !outRadius)
             ? 0.8
             : 0.5
           ),
@@ -89,7 +92,7 @@ class _MyPieChartState extends State<MyPieChart> {
           value: val,
           color: const Color.fromARGB(160, 157, 255, 132),
           radius: widget.radius * 4 *(
-            (prevTouchIndex == outerLength)
+            (prevTouchIndex == outerLength && !outRadius)
             ? 0.8
             : 0.5
           )
@@ -121,23 +124,11 @@ class _MyPieChartState extends State<MyPieChart> {
           pieTouchResponse == null ||
           pieTouchResponse.touchedSection == null) {
         touchedIndex = -1;
-        oneTouch = true;        
+             
         return;
       }
+
       touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-  
-      if (oneTouch == true){
-        oneTouch = false;
-        if (prevTouchIndex == touchedIndex) {
-            prevTouchIndex = -1;
-            toggleOn = false;
-            return;
-          } else {
-            prevTouchIndex = touchedIndex;
-            toggleOn = true;
-            return;
-          }
-      }
 
       final renderBox = context.findRenderObject();
       if (renderBox is! RenderBox) {
@@ -145,6 +136,7 @@ class _MyPieChartState extends State<MyPieChart> {
       }
       final center = renderBox.size.center(Offset.zero);
       final touchPosition = event.localPosition;
+      
       if (touchPosition != null) {
         final dx = touchPosition.dx - center.dx;
         final dy = touchPosition.dy - center.dy;
@@ -152,7 +144,18 @@ class _MyPieChartState extends State<MyPieChart> {
 
         inRadius = distanceFromCenter < 9.9 * widget.radius;
         outRadius = distanceFromCenter > 15 * widget.radius;
+        
+        if (prevTouchPos != touchPosition){
+          oneTouch = true;
+        }
+        prevTouchPos = touchPosition;
       }
+      //checks to fix bugs
+      if (inRadius != prevInRadius){
+        prevTouchIndex = -1;
+        toggleOn = false;
+      }
+      prevInRadius = inRadius;
     });
   }
 
@@ -179,6 +182,7 @@ class _MyPieChartState extends State<MyPieChart> {
     if (diff != -1 && innerSum < outerSum){
       _addFillerSection(true,diff);
     }
+    
     return IgnorePointer(
       ignoring: !inRadius,
       child: PieChart(
@@ -197,6 +201,7 @@ class _MyPieChartState extends State<MyPieChart> {
         ),
       ),
     );
+    
   }
 
   Widget _outerPieChart() {
@@ -224,6 +229,7 @@ class _MyPieChartState extends State<MyPieChart> {
     if (diff != -1 && innerSum > outerSum){
       _addFillerSection(false,diff);
     }
+    
     return PieChart(
       swapAnimationDuration: const Duration(milliseconds: 200),
       swapAnimationCurve: Curves.easeInOut,
@@ -272,29 +278,58 @@ class _MyPieChartState extends State<MyPieChart> {
       centerTitle = sliceName;
       centerSubtitle = ' \$$sliceAmount';
     }    
+
+    setState(() {
+      if (touchedIndex != -1 && oneTouch == true){
+        oneTouch = false;
+        if (prevTouchIndex == touchedIndex) {
+            prevTouchIndex = -1;
+            toggleOn = false;
+            return;
+          } else {
+            prevTouchIndex = touchedIndex;
+            toggleOn = true;
+            return;
+          }
+      }
+    },);
     
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          //chart title or Slice Title
-          centerTitle,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 1.5*widget.radius,
-            fontWeight: FontWeight.w500,
+    return SizedBox(
+      width: 10*widget.radius,
+      height: 10*widget.radius,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        
+        children: [
+          AutoSizeText(
+            //chart title or Slice Title
+            centerTitle,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            maxFontSize: 3*widget.radius,
+            minFontSize: widget.radius,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 1.5*widget.radius,
+              fontWeight: FontWeight.w500,
+              
+            ),
           ),
-        ),
-        Text(
-          //$ amount or nothing
-          centerSubtitle,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: widget.radius,
-            fontWeight: FontWeight.w500,
+          AutoSizeText (
+            //$ amount or nothing
+            centerSubtitle,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            maxFontSize: 2*widget.radius,
+            minFontSize: widget.radius,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: widget.radius,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
