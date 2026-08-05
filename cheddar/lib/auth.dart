@@ -1,4 +1,6 @@
+
 import "package:firebase_auth/firebase_auth.dart";
+
 
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -18,7 +20,6 @@ class Auth {
       );
   }
 
-
   //Create user with email and password
   Future<void> createUserWithEmailAndPassword({
     required String email,
@@ -30,8 +31,15 @@ class Auth {
     );
   }
 
+  //sign in with google (credential)
+  Future<void> signInWithCredential({
+    required OAuthCredential credential
+  }) async {
+    await _firebaseAuth.signInWithCredential(credential);}
+  
   //sign out
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
   }
+
 }

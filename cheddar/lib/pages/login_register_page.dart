@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import'package:firebase_auth/firebase_auth.dart';
 import 'package:cheddar/auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -16,6 +18,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
+
 
   Future<void> signInWithEmailAndPassword() async {
     try {
@@ -37,11 +40,53 @@ class _LoginPageState extends State<LoginPage> {
         email: _controllerEmail.text,
         password: _controllerPassword.text,
         );
+      await saveEmailUser(_controllerEmail.text,_controllerPassword.text);
      } on FirebaseAuthException catch (e) {
       setState((){
         errorMessage = e.message;
       });
     }
+  }
+
+  Future<void> signInWithGoogle()async {
+    final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+    try {
+      GoogleSignInAccount? account = await _googleSignIn.signIn();
+      if (account != null){
+      final _gAuth = await account.authentication;
+      final _credential = GoogleAuthProvider.credential(
+        idToken: _gAuth.idToken,
+        accessToken: _gAuth.accessToken,
+      );
+
+      await Auth().signInWithCredential(credential: _credential);
+      await saveGoogleUser(account);
+      
+      }
+    } on FirebaseAuthException catch (error){
+      errorMessage = error.message;
+    }
+  }
+
+  Future<void> saveGoogleUser(GoogleSignInAccount account)async {
+    FirebaseFirestore.instance.collection('users')
+      .doc(account.email)
+      .set ({
+        "email" : account.email,
+        "username" : account.displayName
+      }
+    );
+  }
+
+  Future<void> saveEmailUser(String email,String password)async {
+    FirebaseFirestore.instance.collection('users')
+      .doc(email)
+      .set ({
+        "email" : email,
+        "username" : "default"
+      }
+    );
   }
 
   // widgets
@@ -87,12 +132,15 @@ class _LoginPageState extends State<LoginPage> {
           setState((){
             isLogin = !isLogin;
           }
-
           );
        },
        child: Text(isLogin ? 'Register instead' : 'Login instead'),
 
     );
+  }
+
+  Widget _googleSignIn(){
+    return ElevatedButton(onPressed: signInWithGoogle, child: const Text('Sign in with Google'));
   }
 
   @override
@@ -124,6 +172,8 @@ class _LoginPageState extends State<LoginPage> {
             _errorMessage(),
             _sumbitButton(),
             _loginOrRegisterButton(),
+            _googleSignIn(),
+            
           ],
         )
       ),

@@ -1,13 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cheddar/auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cheddar/user_provider.dart';
+
 import 'package:cheddar/pages/account_page.dart';
 import 'package:cheddar/pages/budget_page.dart';
 import 'package:cheddar/pages/transaction_page.dart';
 import 'package:cheddar/pages/home_page.dart';
 
 class Mainpage extends StatefulWidget {
-  Mainpage({Key? key}) : super(key: key);
+  const Mainpage({super.key});
   @override
   State<Mainpage> createState() => _MainpageState();
 }
@@ -22,9 +25,16 @@ class _MainpageState extends State<Mainpage> {
     BudgetPage(),
     AccountPage(),
   ];
+  //load user data
+
+  Future<void> loadData ()async{
+    context.read<UserProvider>().setEmail(newEmail: user?.email ?? 'default');
+    context.read<UserProvider>().changeUserName(newUserName: user?.displayName ?? 'default');
+  }
   
   @override
   Widget build(BuildContext context){
+    loadData();
     return Scaffold(
       body: IndexedStack(
         index: myIndex,

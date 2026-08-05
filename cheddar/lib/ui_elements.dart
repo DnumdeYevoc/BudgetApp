@@ -42,12 +42,10 @@ class MyPieChart extends StatefulWidget {
 
 class _MyPieChartState extends State<MyPieChart> {
   int touchedIndex = -1;
-  bool inRadius =
-      false; //whether or not the touch event is inside the inner radius
+  bool inRadius =false; //whether or not the touch event is inside the inner radius
   bool prevInRadius = false;
       
-  bool outRadius =
-      true; //whether or not the touch event is outside the outer radius
+  bool outRadius =true; //whether or not the touch event is outside the outer radius
   bool toggleOn = false;
   int prevTouchIndex = -1;
   bool oneTouch = true;
@@ -259,10 +257,11 @@ class _MyPieChartState extends State<MyPieChart> {
 
     String centerTitle = outRadius ? summary : chartName;
 
+    String net = (innerSum - outerSum).abs().toStringAsFixed(widget.dec);
     String centerSubtitle = (innerSum == outerSum && outRadius)
         ? ''
         : outRadius
-        ? '\$${(innerSum - outerSum).abs().toStringAsFixed(widget.dec)}'
+        ? '\$$net'
         : (inRadius)
         ? '\$${innerSum.toStringAsFixed(widget.dec)}'
         : '\$${outerSum.toStringAsFixed(widget.dec)}';
@@ -275,8 +274,8 @@ class _MyPieChartState extends State<MyPieChart> {
       final String sliceAmount = inRadius
           ? widget.innerData[prevTouchIndex].toStringAsFixed(widget.dec)
           : widget.outerData[prevTouchIndex].toStringAsFixed(widget.dec);
-      centerTitle = sliceName;
-      centerSubtitle = ' \$$sliceAmount';
+      centerTitle = outRadius? summary: sliceName;
+      centerSubtitle = outRadius? '\$$net': '\$$sliceAmount';
     }    
 
     setState(() {
