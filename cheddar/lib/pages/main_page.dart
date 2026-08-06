@@ -28,8 +28,10 @@ class _MainpageState extends State<Mainpage> {
   //load user data
 
   Future<void> loadData ()async{
-    context.read<UserProvider>().setEmail(newEmail: user?.email ?? 'default');
-    context.read<UserProvider>().changeUserName(newUserName: user?.displayName ?? 'default');
+    
+    //function using email as key to load the rest of UserProviders data
+    context.read<UserProvider>().loadDataFromEmail(userEmail: user?.email ?? 'email not found');
+
   }
   
   @override

@@ -34,7 +34,7 @@ class _AccountPageState extends State<AccountPage> {
 
   Widget _userName(){
     return Text(
-      context.watch<UserProvider>().userName,
+      context.watch<UserProvider>().username,
       style: const TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: 25,

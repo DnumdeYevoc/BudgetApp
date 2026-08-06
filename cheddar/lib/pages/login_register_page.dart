@@ -70,13 +70,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> saveGoogleUser(GoogleSignInAccount account)async {
-    FirebaseFirestore.instance.collection('users')
-      .doc(account.email)
-      .set ({
+    final docRef = FirebaseFirestore.instance.collection('users').doc(account.email);
+    final docSnap = await docRef.get();
+    if (docSnap.exists){
+      docRef.set ({
         "email" : account.email,
-        "username" : account.displayName
       }
     );
+    }
   }
 
   Future<void> saveEmailUser(String email,String password)async {
