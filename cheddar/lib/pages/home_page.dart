@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cheddar/ui_elements.dart';
+import 'package:provider/provider.dart';
+import 'package:cheddar/user_provider.dart';
+
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,27 +12,30 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+
+
+
+
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return 
-        MyPieChart(
-          innerData: [1000,100],
+    final Budget budget = context.watch<UserProvider>().curBudget;
+    
+    print(budget.exp.names);
+   
+    return MyPieChart(
+          innerData: budget.inc.curValues,
           innerName: 'Income',
-          innerNameData: ['Paycheque Wow this was auto sized','Birthday Money'],
-          innerIconData: [
-            Icon(Icons.monetization_on_outlined),
-            Icon(Icons.celebration)],
-
-          outerData: [300,500],
+          innerNameData: budget.inc.names,
+          innerIconData: budget.inc.icons,
+          outerData: budget.exp.curValues,
           outerName: 'Expenses',
-          outerNameData: ['Groceries', 'Rent'],
-          outerIconData: [
-            Icon(Icons.fastfood_outlined),
-            Icon(Icons.home),
-            ],
-
+          outerNameData: budget.exp.names,
+          outerIconData: budget.exp.icons,
           radius: 10,
-        );    
-  }
+        );
+        }
+      
+  
+  
 }

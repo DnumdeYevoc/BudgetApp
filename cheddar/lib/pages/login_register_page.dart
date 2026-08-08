@@ -75,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
     if (docSnap.exists){
       docRef.set ({
         "email" : account.email,
-      }
+      }, SetOptions(merge: true)
     );
     }
   }

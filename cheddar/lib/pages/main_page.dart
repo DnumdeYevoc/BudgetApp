@@ -18,6 +18,9 @@ class Mainpage extends StatefulWidget {
 class _MainpageState extends State<Mainpage> {
   final User? user = Auth().currentUser;
 
+  late Future<Scaffold> isloaded;
+
+
   int myIndex = 0;
   List<Widget> pages = [
     HomePage(),
@@ -27,22 +30,34 @@ class _MainpageState extends State<Mainpage> {
   ];
   //load user data
 
-  Future<void> loadData ()async{
-    
+  Future<Scaffold> loadData ()async{
     //function using email as key to load the rest of UserProviders data
     context.read<UserProvider>().loadDataFromEmail(userEmail: user?.email ?? 'email not found');
-
+    await Future.delayed(const Duration(seconds: 6));
+    return Scaffold();
   }
-  
+  @override
+  void initState(){
+    super.initState();
+    isloaded = loadData();
+  }
+
   @override
   Widget build(BuildContext context){
-    loadData();
-    return Scaffold(
-      body: IndexedStack(
-        index: myIndex,
-        children: pages,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
+    
+    return FutureBuilder<Scaffold>(
+
+      future: isloaded,
+      builder:(context,snapshot){
+        if (snapshot.connectionState == ConnectionState.waiting){
+          return Text('loading');
+        }else{
+          return Scaffold(
+            body: IndexedStack(
+              index: myIndex,
+              children: pages,
+              ),
+            bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         
         showSelectedLabels: false,
@@ -76,6 +91,10 @@ class _MainpageState extends State<Mainpage> {
           ),
         ],
       ),
+          );
+        }
+      } 
     );
+
   }
 }
