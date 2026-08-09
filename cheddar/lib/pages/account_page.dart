@@ -59,7 +59,10 @@ class _AccountPageState extends State<AccountPage> {
         ElevatedButton(
           onPressed: (){
             if (userNameController.text != ''){
-              context.read<UserProvider>().changeUserName(newUserName: userNameController.text);
+              context.read<UserProvider>().changeUserVar(
+                (val)=> context.read<UserProvider>().username = val,
+                 userNameController.text,
+                 varName:'username');
               FocusManager.instance.primaryFocus?.unfocus;
               userNameController.clear();
               changeUserName = false;

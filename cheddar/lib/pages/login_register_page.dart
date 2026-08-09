@@ -6,7 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> CreateUserWithEmailAndPassword() async{
+  Future<void> createUserWithEmailAndPassword() async{
     try {   
       await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
@@ -49,18 +49,18 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> signInWithGoogle()async {
-    final GoogleSignIn _googleSignIn = GoogleSignIn();
+    final GoogleSignIn googleSignIn = GoogleSignIn();
 
     try {
-      GoogleSignInAccount? account = await _googleSignIn.signIn();
+      GoogleSignInAccount? account = await googleSignIn.signIn();
       if (account != null){
-      final _gAuth = await account.authentication;
-      final _credential = GoogleAuthProvider.credential(
-        idToken: _gAuth.idToken,
-        accessToken: _gAuth.accessToken,
+      final gAuth = await account.authentication;
+      final credential = GoogleAuthProvider.credential(
+        idToken: gAuth.idToken,
+        accessToken: gAuth.accessToken,
       );
 
-      await Auth().signInWithCredential(credential: _credential);
+      await Auth().signInWithCredential(credential: credential);
       await saveGoogleUser(account);
       
       }
@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget _sumbitButton(){
     return ElevatedButton(
       onPressed:
-        isLogin ? signInWithEmailAndPassword : CreateUserWithEmailAndPassword,
+        isLogin ? signInWithEmailAndPassword :createUserWithEmailAndPassword,
        child: Text(isLogin ? 'Login' : 'Register')
     );
   }

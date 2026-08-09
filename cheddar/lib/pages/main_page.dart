@@ -1,3 +1,4 @@
+
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cheddar/auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:cheddar/pages/account_page.dart';
 import 'package:cheddar/pages/budget_page.dart';
 import 'package:cheddar/pages/transaction_page.dart';
 import 'package:cheddar/pages/home_page.dart';
+import 'package:cheddar/ui_elements.dart';
 
 class Mainpage extends StatefulWidget {
   const Mainpage({super.key});
@@ -33,9 +35,12 @@ class _MainpageState extends State<Mainpage> {
   Future<Scaffold> loadData ()async{
     //function using email as key to load the rest of UserProviders data
     context.read<UserProvider>().loadDataFromEmail(userEmail: user?.email ?? 'email not found');
-    await Future.delayed(const Duration(seconds: 6));
+    
+    await Future.delayed(Duration(seconds: 3)); //athetics to hide blank budget for a few seconds
+    
     return Scaffold();
   }
+
   @override
   void initState(){
     super.initState();
@@ -46,11 +51,10 @@ class _MainpageState extends State<Mainpage> {
   Widget build(BuildContext context){
     
     return FutureBuilder<Scaffold>(
-
       future: isloaded,
       builder:(context,snapshot){
         if (snapshot.connectionState == ConnectionState.waiting){
-          return Text('loading');
+          return MyLoadingScreen();
         }else{
           return Scaffold(
             body: IndexedStack(

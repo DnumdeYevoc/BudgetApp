@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:string_to_icon/string_to_icon.dart';
 
 import 'package:flutter/material.dart';
@@ -13,15 +11,12 @@ class UserProvider extends ChangeNotifier {
 
   Budget curBudget = Budget.blank();
 
-
   UserProvider({
     this.username = 'Set Username',
-    this.email = 'Set User Email'
+    this.email = 'Set User Email',
   });
 
-  void manualNotify(){
-    notifyListeners();
-  }
+
   void changeUserName({
     required String newUserName,
   }) async {
@@ -32,6 +27,28 @@ class UserProvider extends ChangeNotifier {
       "username" : newUserName
         }, SetOptions(merge: true));
   }
+  void changeUserVar<T>(void Function(T) setter, T newValue, {required String varName, mergeOpt = true}) {
+
+    FirebaseFirestore.instance.collection('users').doc(email)
+    .set({
+      varName : newValue
+        }, SetOptions(merge: mergeOpt));
+    notifyListeners();
+    // Call the callback to update the actual class variable
+    setter(newValue);
+  }
+
+  void changeBudgetVar<T>(void Function(T) setter, T newValue, {required String varName, required String date, mergeOpt = true}) {
+    budgetsRef?.doc(date)
+    .set({
+      varName : newValue
+        }, SetOptions(merge: mergeOpt));
+    notifyListeners();
+    // Call the callback to update the actual class variable
+    setter(newValue);
+
+  }
+  
   
   //used when you get email to grab all other assoicated data
   void loadDataFromEmail ({required String userEmail}) async {
@@ -80,7 +97,7 @@ class UserProvider extends ChangeNotifier {
 
   Budget createNewBudget({required String date}){
     //set variables
-    print('creating new budget');
+
     //exp
     List<String> expNames = ['Expense 1','Expense 2'];
     List<String> expIconNames = ['cancel', 'home'];
@@ -128,7 +145,6 @@ class UserProvider extends ChangeNotifier {
   }
 
   Budget loadBudget({required DocumentSnapshot snap}){
-    print('loading budget');
 
     String date;
 
@@ -169,7 +185,6 @@ class UserProvider extends ChangeNotifier {
       expIcons.add(Icon(IconMapper.getIconData(expIconNames[i])));
     }
 
-    print('expCurValues: $expCurValues');
     return Budget(    
     budgetDate: date,
       exp: Expenses(
@@ -221,11 +236,11 @@ class Budget {
 }
 
 class Expenses {
-  final String date;
-  final List<String> names;
-  final List<Icon> icons;
-  final List<double> values;
-  final List<double> curValues;
+  String date;
+  List<String> names;
+  List<Icon> icons;
+  List<double> values;
+  List<double> curValues;
 
   Expenses({
     required this.date,
@@ -237,11 +252,11 @@ class Expenses {
 }
 
 class Incomes {
-  final String date;
-  final List<String> names;
-  final List<Icon> icons;
-  final List<double> values;
-  final List<double> curValues;
+  String date;
+  List<String> names;
+  List<Icon> icons;
+  List<double> values;
+  List<double> curValues;
 
   Incomes({
     required this.date,
