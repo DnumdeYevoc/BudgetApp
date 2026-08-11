@@ -177,10 +177,8 @@ class _BudgetPageState extends State<BudgetPage> {
             );
           },
         );
-       
-
         },
-        
+        backgroundColor: const Color.fromARGB(255, 207, 186, 0),
         child: Icon(Icons.add),
         ),
 
@@ -198,8 +196,10 @@ class _BudgetPageState extends State<BudgetPage> {
                   outerNameData: budget.exp.names,
                   outerIconData: budget.exp.icons,
                   radius: 10,
+                  showMaxValues: false,
                 ),
-          MyCategoryList(names: budget.inc.names, icons: budget.inc.icons, values: budget.inc.values, showCurrentValues: false, isInc: true)
+          MyCategoryList(names: budget.inc.names, icons: budget.inc.icons, values: budget.inc.values, showCurrentValues: false, isInc: true),
+          MyCategoryList(names: budget.exp.names, icons: budget.exp.icons, values: budget.exp.values, showCurrentValues: false, isInc: false)
         ],
       ),
     );

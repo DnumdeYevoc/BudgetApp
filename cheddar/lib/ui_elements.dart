@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cheddar/user_provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -77,6 +77,8 @@ class MyCategoryList extends StatefulWidget {
 
     required this.showCurrentValues,
     required this.isInc,
+
+ 
   });
 
   final List<String> names;
@@ -84,6 +86,7 @@ class MyCategoryList extends StatefulWidget {
   final List<double> values;
 
   final List<double> curValues;
+
 
   final bool showCurrentValues;
   final bool isInc;
@@ -95,51 +98,67 @@ class MyCategoryList extends StatefulWidget {
 class _MyCategoryListState extends State<MyCategoryList> {
   @override
   Widget build(BuildContext context) {
-    Color catColor = widget.isInc? Colors.green: Colors.red;
+    Color catColor = widget.isInc
+        ? const Color.fromARGB(131, 76, 175, 79)
+        : const Color.fromARGB(131, 244, 67, 54);
     double valueSum = widget.values.fold(
       0,
       (previousValue, element) => previousValue + element,
     );
 
-    return Expanded(
-      // width: 400,
-      // height: 100,
+    return SizedBox(
+      height: 100,
       child: ListView.builder(
+        scrollDirection: Axis.horizontal,
         itemCount: widget.values.length,
         padding: const EdgeInsets.all(8.0),
         itemBuilder: (BuildContext context, int index) {
-          return Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: 5,
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurface.withAlpha(20), width: 4.0,
-                ),
-              ),
-              child: ListTile(
-                leading: widget.icons[index],
-                title: Text(widget.names[index],),
-                subtitle: Stack(
-                  alignment:Alignment.center,
-                  children: [
-                    
+          return SizedBox(
+            width: 200,
+            child: Card(
+              clipBehavior: Clip.antiAlias,
 
-                    SizedBox(
-                      height: 20,
-                      child: LinearProgressIndicator(
-                        value: widget.values[index] / valueSum,
-                        backgroundColor: Colors.grey,
-                        color: catColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    Text('\$${widget.values[index]}'),
-                  ],
+              elevation: 5,
+              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withAlpha(20),
+                    width: 4.0,
+                  ),
                 ),
-                //onTap
+                child: ListTile(
+                  leading: widget.icons[index],
+                  title: Text(widget.names[index]),
+                  subtitle: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        height: 25,
+                        child: RotatedBox(
+                          quarterTurns: widget.isInc ? 0 : 2,
+                          child: LinearProgressIndicator(
+                            value: widget.showCurrentValues
+                                ? widget.curValues[index] / widget.values[index]
+                                : widget.values[index] / valueSum,
+                            backgroundColor: Colors.transparent,
+                            color: catColor,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        widget.showCurrentValues
+                            ? '\$${widget.curValues[index].toStringAsFixed(0)} / \$${widget.values[index].toStringAsFixed(0)}'
+                            : '\$${widget.values[index].toStringAsFixed(0)} (%${(widget.values[index] / valueSum * 100).toStringAsFixed(0)})',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -164,6 +183,10 @@ class MyPieChart extends StatefulWidget {
     required this.outerIconData,
 
     required this.radius,
+    required this.showMaxValues,
+
+    this.innerMaxData = const [],
+    this.outerMaxData= const [],
   });
 
   final double radius;
@@ -182,6 +205,10 @@ class MyPieChart extends StatefulWidget {
   final String outerName;
   final String innerName;
 
+  final bool showMaxValues;
+
+  final List<double> innerMaxData;
+  final List<double> outerMaxData;
   @override
   State<MyPieChart> createState() => _MyPieChartState();
 }
@@ -215,30 +242,32 @@ class _MyPieChartState extends State<MyPieChart> {
 
   void _addFillerSection(bool isInner, double val) {
     setState(() {
-      if (isInner == true) {
-        //add to inner //overbudget
-        innerFiller = true;
-        outerFiller = false;
-        innerSections.add(
-          PieChartSectionData(
-            showTitle: false,
-            value: val,
-            color: const Color.fromARGB(70, 255, 18, 1),
-            radius: widget.radius * 4 * 0.6,
-          ),
-        );
-      } else {
-        // add to outer //underbudget
-        outerFiller = true;
-        innerFiller = false;
-        outerSections.add(
-          PieChartSectionData(
-            showTitle: false,
-            value: val,
-            color: const Color.fromARGB(160, 157, 255, 132),
-            radius: widget.radius * 4 * 0.6,
-          ),
-        );
+      if (!widget.showMaxValues) {
+        if (isInner == true) {
+          //add to inner //overbudget
+          innerFiller = true;
+          outerFiller = false;
+          innerSections.add(
+            PieChartSectionData(
+              showTitle: false,
+              value: val,
+              color: const Color.fromARGB(70, 255, 18, 1),
+              radius: widget.radius * 4 * 0.6,
+            ),
+          );
+        } else {
+          // add to outer //underbudget
+          outerFiller = true;
+          innerFiller = false;
+          outerSections.add(
+            PieChartSectionData(
+              showTitle: false,
+              value: val,
+              color: const Color.fromARGB(160, 157, 255, 132),
+              radius: widget.radius * 4 * 0.6,
+            ),
+          );
+        }
       }
     });
   }
@@ -308,15 +337,18 @@ class _MyPieChartState extends State<MyPieChart> {
 
   Widget _innerPieChart() {
     //premake sections:
-
-    innerSections = [
-      for (int i = 0; i < innerLength; i++)
-        PieChartSectionData(
+    print(widget.innerMaxData);
+    print(widget.innerData);
+    List<PieChartSectionData> combined = [];
+    
+    List<PieChartSectionData>listA = [for (int i = 0; i < innerLength; i++)
+      PieChartSectionData(
           showTitle: false,
           badgeWidget: widget.innerIconData[i],
 
           value: widget.innerData[i],
 
+          
           color: Color.fromARGB(255, 255 - (i * 20), 200, 0),
           radius:
               widget.radius *
@@ -328,8 +360,30 @@ class _MyPieChartState extends State<MyPieChart> {
                   : (prevTouchIndex == i)
                   ? 1.4
                   : 1),
-        ),
+        ), 
     ];
+
+    List<PieChartSectionData> listB = widget.showMaxValues
+    ? [
+      for (int i = 0; i < innerLength; i++)
+      PieChartSectionData(
+          showTitle: false,
+
+          value: widget.innerData[i]-widget.innerMaxData[i],
+
+          color: Color.fromARGB(100, 255 - (i * 20), 200, 0),
+          radius: widget.radius * 4 
+        ), 
+    ]
+    :[];
+
+    for (int i = 0; i < listA.length; i++) {
+      if (i < listB.length) combined.add(listB[i]);
+      combined.add(listA[i]);
+      
+    }
+     
+    innerSections = combined;
     if (diff != -1 && innerSum < outerSum) {
       _addFillerSection(true, diff);
     }

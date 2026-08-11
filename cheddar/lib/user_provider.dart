@@ -260,9 +260,9 @@ class UserProvider extends ChangeNotifier {
     List<Icon> iconList = [];
     for (int i = 0; i < stringList.length; i++){
       print(stringList[i]);
-      iconList.add(Icon(IconMapper.getIconData(stringList[i])));
+      iconList.add(Icon(IconMapper.getIconData(stringList[i])));//TODO add monetization _on to map of strings to icons, for default value
     }
-    
+
     return iconList;
    }  
 }
