@@ -12,6 +12,7 @@ dependencies:
   cloud_firestore: ^6.7.1
   google_sign_in: ^6.2.1
   string_to_icon: ^1.0.0
+  flutter_iconpicker: ^4.0.3
 
   flutter:
     sdk: flutter

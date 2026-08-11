@@ -17,6 +17,7 @@ class _HomePageState extends State<HomePage> {
     final Budget budget = context.watch<UserProvider>().curBudget;
     
     return Scaffold(
+      appBar: AppBar(title: MyHeaderTitle()),
       body: MyPieChart(
               innerData: budget.inc.curValues,
               innerName: 'Income',

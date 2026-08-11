@@ -1,32 +1,151 @@
 import 'dart:math';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cheddar/user_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+//stateless
+class MyHeaderTitle extends StatelessWidget {
+  const MyHeaderTitle({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final Budget budget = context.watch<UserProvider>().curBudget;
+    return Column(
+      children: [
+        SizedBox(height: 30),
+        Center(
+          child: SizedBox(
+            width: 200,
+            height: 70,
+            child: AutoSizeText(
+              budget.budgetDate,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              maxFontSize: 60,
+              minFontSize: 10,
+              style: TextStyle(
+                fontSize: 50,
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class MyLoadingScreen extends StatelessWidget {
-  const MyLoadingScreen({
-    super.key,});
-  
+  const MyLoadingScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       alignment: Alignment.center,
-      children: [ 
-        Icon(Icons.monetization_on_sharp, color: Theme.of(context).colorScheme.primary, size: 50,),
+      children: [
+        Icon(
+          Icons.monetization_on_sharp,
+          color: Theme.of(context).colorScheme.primary,
+          size: 50,
+        ),
         Transform.scale(
-          scale:2,
+          scale: 2,
           child: CircularProgressIndicator(
             color: Theme.of(context).colorScheme.primary,
             strokeWidth: 3,
-          
           ),
-        )
+        ),
       ],
     );
+  }
+}
 
+//stateful
+class MyCategoryList extends StatefulWidget {
+  const MyCategoryList({
+    super.key,
+    //reuquired
+    required this.names,
+    required this.icons,
+    required this.values,
+
+    this.curValues = const [],
+
+    required this.showCurrentValues,
+    required this.isInc,
+  });
+
+  final List<String> names;
+  final List<Icon> icons;
+  final List<double> values;
+
+  final List<double> curValues;
+
+  final bool showCurrentValues;
+  final bool isInc;
+
+  @override
+  State<MyCategoryList> createState() => _MyCategoryListState();
+}
+
+class _MyCategoryListState extends State<MyCategoryList> {
+  @override
+  Widget build(BuildContext context) {
+    Color catColor = widget.isInc? Colors.green: Colors.red;
+    double valueSum = widget.values.fold(
+      0,
+      (previousValue, element) => previousValue + element,
+    );
+
+    return Expanded(
+      // width: 400,
+      // height: 100,
+      child: ListView.builder(
+        itemCount: widget.values.length,
+        padding: const EdgeInsets.all(8.0),
+        itemBuilder: (BuildContext context, int index) {
+          return Card(
+            clipBehavior: Clip.antiAlias,
+            elevation: 5,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.onSurface.withAlpha(20), width: 4.0,
+                ),
+              ),
+              child: ListTile(
+                leading: widget.icons[index],
+                title: Text(widget.names[index],),
+                subtitle: Stack(
+                  alignment:Alignment.center,
+                  children: [
+                    
+
+                    SizedBox(
+                      height: 20,
+                      child: LinearProgressIndicator(
+                        value: widget.values[index] / valueSum,
+                        backgroundColor: Colors.grey,
+                        color: catColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    Text('\$${widget.values[index]}'),
+                  ],
+                ),
+                //onTap
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -195,8 +314,10 @@ class _MyPieChartState extends State<MyPieChart> {
         PieChartSectionData(
           showTitle: false,
           badgeWidget: widget.innerIconData[i],
+
           value: widget.innerData[i],
-          color: Colors.yellow[(i + 6) * 100],
+
+          color: Color.fromARGB(255, 255 - (i * 20), 200, 0),
           radius:
               widget.radius *
               4 *
@@ -241,7 +362,8 @@ class _MyPieChartState extends State<MyPieChart> {
           showTitle: false,
           badgeWidget: widget.outerIconData[i],
           value: widget.outerData[i],
-          color: Colors.orange[(i + 8) * 100],
+
+          color: Color.fromARGB(255, 255 - (i * 15), 130 - (i * 10), 0),
           radius:
               widget.radius *
               4 *
@@ -314,8 +436,8 @@ class _MyPieChartState extends State<MyPieChart> {
       if (touchedIndex != -1 && oneTouch == true) {
         oneTouch = false;
         if (prevTouchIndex == touchedIndex ||
-            touchedIndex > innerLength ||
-            touchedIndex > outerLength) {
+            touchedIndex >= innerLength && inRadius ||
+            touchedIndex >= outerLength && !inRadius && !outRadius) {
           prevTouchIndex = -1;
           toggleOn = false;
           return;
@@ -344,7 +466,7 @@ class _MyPieChartState extends State<MyPieChart> {
             minFontSize: widget.radius,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 1.5 * widget.radius,
+              fontSize: 2 * widget.radius,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -352,12 +474,12 @@ class _MyPieChartState extends State<MyPieChart> {
             //$ amount or nothing
             centerSubtitle,
             textAlign: TextAlign.center,
-            maxLines: 2,
-            maxFontSize: 2 * widget.radius,
+            maxLines: 1,
+            maxFontSize: 3 * widget.radius,
             minFontSize: widget.radius,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: widget.radius,
+              fontSize: 1.5 * widget.radius,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -368,9 +490,15 @@ class _MyPieChartState extends State<MyPieChart> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [_outerPieChart(), _innerPieChart(), _centerText()],
+    return Center(
+      child: SizedBox(
+        height: widget.radius * 30,
+        width: widget.radius * 30,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [_outerPieChart(), _innerPieChart(), _centerText()],
+        ),
+      ),
     );
   }
 }

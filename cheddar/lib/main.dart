@@ -28,14 +28,16 @@ class MainApp extends StatelessWidget {
           colorScheme: ColorScheme(
             primary: Colors.black87,
             onPrimary: Colors.white,
-            secondary: Colors.white,
-            onSecondary: Colors.black38,
+            secondary: Colors.black87,
+            onSecondary: Colors.yellow,
             error: Colors.red,
             onError: Colors.black54,
-            surface: const Color.fromARGB(255, 164, 153, 90),
-            onSurface: Colors.black54,
+            surface: const Color.fromARGB(255, 233, 236, 143),
+            onSurface: Colors.black,
+            
             brightness: Brightness.light,
           ),
+          iconTheme: IconThemeData(color: Colors.black45),
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             backgroundColor: Colors.black87,
             selectedItemColor: Colors.yellow,
@@ -49,6 +51,7 @@ class MainApp extends StatelessWidget {
             seedColor: Colors.yellow,
             brightness: Brightness.dark,
           ),
+          iconTheme: IconThemeData(color: Colors.white60),
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             backgroundColor: Colors.black87,
             selectedItemColor: Colors.yellow,

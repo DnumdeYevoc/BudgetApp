@@ -48,6 +48,55 @@ class UserProvider extends ChangeNotifier {
     setter(newValue);
 
   }
+
+  void addCategory<T>({
+    required String name, required double value, required Icon icon, required String iconName,required bool isInc, required String date, mergeOpt = true}) {
+    if (isInc){
+      
+      
+      //add name, value icon to inc arrays
+      curBudget.inc.names.add(name);
+      curBudget.inc.values.add(value);
+      curBudget.inc.icons.add(icon);
+
+      curBudget.inc.curValues.add(0);
+      //add icon name 
+      curBudget.inc.iconNames.add(iconName);
+      
+      //upadte database
+      budgetsRef?.doc(date)
+      .set({
+        'incNames' : curBudget.inc.names,
+        'incValues' : curBudget.inc.values,
+        'incIconNames' : curBudget.inc.iconNames,
+        'incCurValues' : curBudget.inc.curValues,
+
+          }, SetOptions(merge: mergeOpt));
+
+    }else{//exp
+      curBudget.exp.names.add(name);
+      curBudget.exp.values.add(value);
+      curBudget.exp.icons.add(icon);
+
+      curBudget.exp.curValues.add(0);
+      //add icon name add it
+      curBudget.exp.iconNames.add(iconName);
+      
+      //upadte database
+      budgetsRef?.doc(date)
+      .set({
+        'expNames' : curBudget.exp.names,
+        'expValues' : curBudget.exp.values,
+        'expIconNames' : curBudget.exp.iconNames,
+        'expCurValues' : curBudget.exp.curValues,
+
+          }, SetOptions(merge: mergeOpt));
+
+    }
+    notifyListeners();
+      
+  }
+  
   
   
   //used when you get email to grab all other assoicated data
@@ -70,7 +119,7 @@ class UserProvider extends ChangeNotifier {
   
     //test
     //function that can be used later if we need to get any budget data
-    setBudgetData(date: "08_2026"); 
+    setBudgetData(date: "August 2026"); 
     notifyListeners();  
   }
 
@@ -130,6 +179,7 @@ class UserProvider extends ChangeNotifier {
         date: date,
         names: expNames,
         icons: expIcons,
+        iconNames: expIconNames,
         values: expValues,
         curValues: expCurValues,
 
@@ -138,6 +188,7 @@ class UserProvider extends ChangeNotifier {
         date: date,
         names: incNames,
         icons: incIcons,
+        iconNames: incIconNames,
         values: incValues,
         curValues: incCurValues,
         )
@@ -158,7 +209,6 @@ class UserProvider extends ChangeNotifier {
     List<String> incIconNames;
     List<double> incValues;
     List<double> incCurValues;
-
     
     //load from database
     
@@ -181,9 +231,9 @@ class UserProvider extends ChangeNotifier {
     List<Icon> incIcons = stringsToIcons(stringList: incIconNames);
     List<Icon> expIcons= stringsToIcons(stringList: expIconNames);
 
-    for (int i = 0; i < expIconNames.length; i++){
-      expIcons.add(Icon(IconMapper.getIconData(expIconNames[i])));
-    }
+    // for (int i = 0; i < expIconNames.length; i++){
+    //   expIcons.add(Icon(IconMapper.getIconData(expIconNames[i])));
+    // }
 
     return Budget(    
     budgetDate: date,
@@ -191,6 +241,7 @@ class UserProvider extends ChangeNotifier {
         date: date,
         names: expNames,
         icons: expIcons,
+        iconNames: expIconNames,
         values: expValues,
         curValues: expCurValues,
 
@@ -199,16 +250,19 @@ class UserProvider extends ChangeNotifier {
         date: date,
         names: incNames,
         icons: incIcons,
+        iconNames: incIconNames,
         values: incValues,
         curValues: incCurValues,
         )
       );
   }
-   List<Icon> stringsToIcons({required List<String> stringList}){
+  List<Icon> stringsToIcons({required List<String> stringList}){
     List<Icon> iconList = [];
     for (int i = 0; i < stringList.length; i++){
+      print(stringList[i]);
       iconList.add(Icon(IconMapper.getIconData(stringList[i])));
     }
+    
     return iconList;
    }  
 }
@@ -228,8 +282,8 @@ class Budget {
   static Budget blank(){
     return Budget(
       budgetDate: 'null',
-      exp: Expenses(date: 'null' , names: [], icons: [], values: [], curValues: []),
-      inc: Incomes(date: 'null' , names: [], icons: [], values: [], curValues: [])
+      exp: Expenses(date: 'null' , names: [], icons: [], iconNames: [],values: [], curValues: []),
+      inc: Incomes(date: 'null' , names: [], icons: [], iconNames: [], values: [], curValues: [])
     );
     
   }
@@ -239,6 +293,7 @@ class Expenses {
   String date;
   List<String> names;
   List<Icon> icons;
+  List<String> iconNames;
   List<double> values;
   List<double> curValues;
 
@@ -246,6 +301,7 @@ class Expenses {
     required this.date,
     required this.names,
     required this.icons,
+    required this.iconNames,
     required this.values,
     required this.curValues,
   });
@@ -255,6 +311,7 @@ class Incomes {
   String date;
   List<String> names;
   List<Icon> icons;
+  List<String> iconNames;
   List<double> values;
   List<double> curValues;
 
@@ -262,6 +319,7 @@ class Incomes {
     required this.date,
     required this.names,
     required this.icons,
+    required this.iconNames,
     required this.values,
     required this.curValues,
   });
