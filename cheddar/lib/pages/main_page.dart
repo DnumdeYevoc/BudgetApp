@@ -34,9 +34,9 @@ class _MainpageState extends State<Mainpage> {
 
   Future<Scaffold> loadData ()async{
     //function using email as key to load the rest of UserProviders data
-    context.read<UserProvider>().loadDataFromEmail(userEmail: user?.email ?? 'email not found');
+
+    await context.read<UserProvider>().loadDataFromEmail(userEmail: user?.email ?? 'email not found');
     
-    await Future.delayed(Duration(seconds: 3)); //athetics to hide blank budget for a few seconds
     
     return Scaffold();
   }

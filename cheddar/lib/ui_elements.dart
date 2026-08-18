@@ -6,13 +6,15 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+import 'package:flutter_iconpicker/Models/configuration.dart';
+
 //stateless
 class MyHeaderTitle extends StatelessWidget {
   const MyHeaderTitle({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final Budget budget = context.watch<UserProvider>().curBudget;
     return Column(
       children: [
         SizedBox(height: 30),
@@ -21,10 +23,10 @@ class MyHeaderTitle extends StatelessWidget {
             width: 200,
             height: 70,
             child: AutoSizeText(
-              budget.budgetDate,
+              context.select((UserProvider p) => p.curBudget.budgetDate),
               textAlign: TextAlign.center,
-              maxLines: 2,
-              maxFontSize: 60,
+              maxLines: 1,
+              maxFontSize: 40,
               minFontSize: 10,
               style: TextStyle(
                 fontSize: 50,
@@ -65,6 +67,461 @@ class MyLoadingScreen extends StatelessWidget {
 }
 
 //stateful
+class MyBottomSheetBuilder extends StatefulWidget {
+  const MyBottomSheetBuilder({
+    super.key,
+    required this.title,
+    required this.edit,
+    this.catIndex = -1,
+    this.catType = true,
+    //reuquired
+  });
+  final String title;
+  final bool edit;
+  final int catIndex;
+  final bool catType; //inc or exp
+  @override
+  State<MyBottomSheetBuilder> createState() => _MyBottomSheetBuilderState();
+}
+
+class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
+  bool selectedType = true;
+  final TextEditingController categoryNameController = TextEditingController();
+  final TextEditingController categoryAmountController =
+      TextEditingController();
+  Icon categoryIcon = Icon(Icons.monetization_on);
+  String categoryIconName = 'monetization_on';
+
+  String title = '';
+  bool edit = false;
+  int catIndex = -1;
+  bool catType = true; //inc or exp
+
+  //save initial values
+  Icon initialCategoryIcon = Icon(Icons.monetization_on);
+  String initialCategoryIconName = 'monetization_on';
+  String initialCategoryName = '';
+  double initialCategoryValue = -1;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    title = widget.title;
+    edit = widget.edit;
+    catIndex = widget.catIndex;
+    catType = widget.catType;
+    final Budget budget = context
+        .read<UserProvider>()
+        .curBudget; //works bc it runs once, doesnt need to watch
+    if (edit) {
+      //show current values
+      //and set initial values to base whether or not they changed
+      selectedType = catType;
+      //save inital
+      if (selectedType) {
+        if (catIndex >= budget.inc.values.length) return;
+        //inc
+        //set values from provider
+        categoryIcon = budget.inc.icons[catIndex];
+        categoryIconName = budget.inc.iconNames[catIndex];
+        categoryNameController.text = budget.inc.names[catIndex];
+        categoryAmountController.text = '${budget.inc.values[catIndex]}';
+        initialCategoryValue = budget.inc.values[catIndex];
+      } else {
+        if (catIndex >= budget.exp.values.length) return;
+
+        //exp
+        categoryIcon = budget.exp.icons[catIndex];
+        categoryIconName = budget.exp.iconNames[catIndex];
+        categoryNameController.text = budget.exp.names[catIndex];
+        categoryAmountController.text = '${budget.exp.values[catIndex]}';
+        initialCategoryValue = budget.exp.values[catIndex];
+      }
+      //save initial values
+      initialCategoryIcon = categoryIcon;
+      initialCategoryIconName = categoryIconName;
+      initialCategoryName = categoryNameController.text;
+    }
+  }
+
+  Future<void> _pickIcon() async {
+    IconPickerIcon? result = await showIconPicker(
+      context,
+
+      configuration: SinglePickerConfiguration(
+        showSearchBar: true,
+        showTooltips: true,
+        iconPackModes: [IconPack.material],
+      ),
+    );
+    if (!mounted) return;
+
+    if (result != null) {
+      setState(() {
+        categoryIcon = Icon(result.data);
+        categoryIconName = result.name;
+      });
+    } else {
+      setState(() {
+        categoryIcon = Icon(Icons.monetization_on);
+        categoryIconName = 'monetization_on';
+      });
+    }
+  }
+
+  Future<void> _editArrayVariables({
+    required Budget budget,
+    required int index,
+
+    required double val,
+    required Icon icon,
+    required String iconName,
+    required String name,
+  }) async {
+    //set stype
+    if (catIndex != -1) {
+      //make sure that index exists
+      if (selectedType == true) {
+        //inc
+        // value
+
+        if (initialCategoryValue != val) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<double>(
+            (list) async {
+              final next = List<double>.from(list);
+              next[index] = val;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.inc.values,
+            (list) async {
+              context.read<UserProvider>().curBudget.inc.values = list;
+            },
+            index: index,
+            newVar: val,
+            date: budget.budgetDate,
+            varName: 'incValues',
+          );
+        }
+        //icon
+        if (initialCategoryIcon != icon) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<Icon>(
+            (list) async {
+              final next = List<Icon>.from(list);
+              next[index] = icon;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.inc.icons,
+            (list) async {
+              context.read<UserProvider>().curBudget.inc.icons = list;
+            },
+            index: index,
+            newVar: icon,
+            date: budget.budgetDate,
+            varName: 'null', //doesn't matter
+            firebaseSave:
+                false, //makes it only save to local, bc firebase only stores icon names
+          );
+        }
+        //icon name
+        if (initialCategoryIconName != iconName) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<String>(
+            (list) async {
+              final next = List<String>.from(list);
+              next[index] = iconName;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.inc.iconNames,
+            (list) async {
+              context.read<UserProvider>().curBudget.inc.iconNames = list;
+            },
+            index: index,
+            newVar: iconName,
+            date: budget.budgetDate,
+            varName: 'incIconNames',
+          );
+        }
+        //name
+        if (initialCategoryName != name) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<String>(
+            (list) async {
+              final next = List<String>.from(list);
+              next[index] = name;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.inc.names,
+            (list) async {
+              context.read<UserProvider>().curBudget.inc.names = list;
+            },
+            index: index,
+            newVar: name,
+            date: budget.budgetDate,
+            varName: 'incNames',
+          );
+        }
+      } else {
+        //exp
+
+        if (initialCategoryValue != val) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<double>(
+            (list) async {
+              final next = List<double>.from(list);
+              next[index] = val;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.exp.values,
+            (list) async {
+              context.read<UserProvider>().curBudget.exp.values = list;
+            },
+            index: index,
+            newVar: val,
+            date: budget.budgetDate,
+            varName: 'expValues',
+          );
+        }
+        //icon
+        if (initialCategoryIcon != icon) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<Icon>(
+            (list) async {
+              final next = List<Icon>.from(list);
+              next[index] = icon;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.exp.icons,
+            (list) async {
+              context.read<UserProvider>().curBudget.exp.icons = list;
+            },
+            index: index,
+            newVar: icon,
+            date: budget.budgetDate,
+            varName: 'null', //doesn't matter
+            firebaseSave:
+                false, //makes it only save to local, bc firebase only stores icon names
+          );
+        }
+        //icon name
+        if (initialCategoryIconName != iconName) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<String>(
+            (list) async {
+              final next = List<String>.from(list);
+              next[index] = iconName;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.exp.iconNames,
+            (list) async {
+              context.read<UserProvider>().curBudget.exp.iconNames = list;
+            },
+            index: index,
+            newVar: iconName,
+            date: budget.budgetDate,
+            varName: 'expIconNames',
+          );
+        }
+        //name
+        if (initialCategoryName != name) {
+          //check for performance, to see if variable changed at all
+          if (!mounted) return;
+          await context.read<UserProvider>().changeBudgetArrayVar<String>(
+            (list) async {
+              final next = List<String>.from(list);
+              next[index] = name;
+              return next;
+            },
+            context.read<UserProvider>().curBudget.exp.names,
+            (list) async {
+              context.read<UserProvider>().curBudget.exp.names = list;
+            },
+            index: index,
+            newVar: name,
+            date: budget.budgetDate,
+            varName: 'expNames',
+          );
+        }
+      }
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Budget budget = context.watch<UserProvider>().curBudget;
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 20,
+            left: 20,
+            right: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 10,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+
+              //exp or inc
+              edit
+                  ? ElevatedButton(
+                      onPressed: () {
+                        context.read<UserProvider>().deleteCategory(
+                          index: catIndex,
+                          isInc: catType,
+                          date: budget.budgetDate,
+                        );
+                        Navigator.pop(context);
+                      },
+                      child: Text('Delete'),
+                    )
+                  : SegmentedButton<bool>(
+                      emptySelectionAllowed: false,
+                      segments: const [
+                        ButtonSegment<bool>(value: true, label: Text('Income')),
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text('Expense'),
+                        ),
+                      ],
+                      selected: {selectedType},
+                      onSelectionChanged: (Set<bool> newSelection) {
+                        setModalState(() {
+                          selectedType = newSelection.first;
+                        });
+                      },
+                    ),
+
+              Row(
+                //name selector
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 22,
+                children: [
+                  Text('Name'),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      //Category Name
+                      style: TextStyle(fontSize: 12),
+                      controller: categoryNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              Row(
+                //budget amount selector
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  Text('Amount'),
+                  SizedBox(
+                    width: 100,
+                    height: 40,
+                    child: TextField(
+                      //Category amount
+                      keyboardType: TextInputType.number,
+                      controller: categoryAmountController,
+                      style: TextStyle(fontSize: 12),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              Row(
+                //pick Icon
+                spacing: 10,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Icon'),
+                  IconButton(
+                    onPressed: () {
+                      _pickIcon();
+                    },
+                    icon: categoryIcon,
+                    iconSize: 30,
+                  ),
+                ],
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  double val =
+                      double.tryParse(categoryAmountController.text) ?? -1;
+                  if (categoryNameController.text != '' &&
+                      val != -1 &&
+                      val != 0) {
+                    //save or edit all the values
+                    if (edit) {
+                      //edit existsing category
+                      _editArrayVariables(
+                        budget: budget,
+                        index: catIndex,
+                        icon: categoryIcon,
+                        iconName: categoryIconName,
+                        name: categoryNameController.text,
+                        val: val,
+                      );
+                    } else {
+                      //save new category
+                      context.read<UserProvider>().addCategory(
+                        isInc: selectedType,
+                        date: budget.budgetDate,
+                        icon: categoryIcon,
+                        iconName: categoryIconName,
+                        name: categoryNameController.text,
+                        value: val,
+                      );
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                child: Text(edit ? 'Save Changes' : 'Save'),
+              ),
+
+              SizedBox(height: 20), //spacer
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class MyCategoryList extends StatefulWidget {
   const MyCategoryList({
     super.key,
@@ -77,8 +534,6 @@ class MyCategoryList extends StatefulWidget {
 
     required this.showCurrentValues,
     required this.isInc,
-
- 
   });
 
   final List<String> names;
@@ -86,7 +541,6 @@ class MyCategoryList extends StatefulWidget {
   final List<double> values;
 
   final List<double> curValues;
-
 
   final bool showCurrentValues;
   final bool isInc;
@@ -96,12 +550,43 @@ class MyCategoryList extends StatefulWidget {
 }
 
 class _MyCategoryListState extends State<MyCategoryList> {
+  List<String> names = [];
+  List<Icon> icons = [];
+  List<double> values = [];
+
+  List<double> curValues = [];
+  bool showCurrentValues = true;
+  bool isInc = true;
+  @override
+  void initState() {
+    super.initState();
+    // 2. Initialize it once from the widget
+    names = widget.names;
+    icons = widget.icons;
+    values = widget.values;
+    curValues = widget.curValues;
+    showCurrentValues = widget.showCurrentValues;
+    isInc = widget.isInc;
+  }
+
+  @override
+  void didUpdateWidget(covariant MyCategoryList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    names = widget.names;
+    icons = widget.icons;
+    values = widget.values;
+    curValues = widget
+        .curValues; //TODO need to change this for adding and deleteing to work properly apparently
+    showCurrentValues = widget.showCurrentValues;
+    isInc = widget.isInc;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Color catColor = widget.isInc
+    Color catColor = isInc
         ? const Color.fromARGB(131, 76, 175, 79)
         : const Color.fromARGB(131, 244, 67, 54);
-    double valueSum = widget.values.fold(
+    double valueSum = values.fold(
       0,
       (previousValue, element) => previousValue + element,
     );
@@ -110,7 +595,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: widget.values.length,
+        itemCount: values.length,
         padding: const EdgeInsets.all(8.0),
         itemBuilder: (BuildContext context, int index) {
           return SizedBox(
@@ -131,33 +616,48 @@ class _MyCategoryListState extends State<MyCategoryList> {
                   ),
                 ),
                 child: ListTile(
-                  leading: widget.icons[index],
-                  title: Text(widget.names[index]),
+                  leading: icons[index],
+                  title: Text(names[index]),
                   subtitle: Stack(
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
                         height: 25,
                         child: RotatedBox(
-                          quarterTurns: widget.isInc ? 0 : 2,
+                          quarterTurns: isInc ? 0 : 2,
                           child: LinearProgressIndicator(
-                            value: widget.showCurrentValues
-                                ? widget.curValues[index] / widget.values[index]
-                                : widget.values[index] / valueSum,
-                            backgroundColor: Colors.transparent,
+                            value: showCurrentValues
+                                ? curValues[index] / values[index]
+                                : values[index] / valueSum,
+                            backgroundColor: const Color.fromARGB(37, 0, 0, 0),
                             color: catColor,
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                       ),
                       Text(
-                        widget.showCurrentValues
-                            ? '\$${widget.curValues[index].toStringAsFixed(0)} / \$${widget.values[index].toStringAsFixed(0)}'
-                            : '\$${widget.values[index].toStringAsFixed(0)} (%${(widget.values[index] / valueSum * 100).toStringAsFixed(0)})',
+                        showCurrentValues
+                            ? '\$${curValues[index].toStringAsFixed(0)} / \$${values[index].toStringAsFixed(0)}'
+                            : '\$${values[index].toStringAsFixed(0)} (%${(values[index] / valueSum * 100).toStringAsFixed(0)})',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
+                  onTap: () {
+                    //show edit screen
+                    showModalBottomSheet(
+                      isScrollControlled: true,
+                      context: context,
+                      builder: (context) {
+                        return MyBottomSheetBuilder(
+                          title: 'Edit Category',
+                          edit: true,
+                          catIndex: index,
+                          catType: isInc,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ),
@@ -183,10 +683,6 @@ class MyPieChart extends StatefulWidget {
     required this.outerIconData,
 
     required this.radius,
-    required this.showMaxValues,
-
-    this.innerMaxData = const [],
-    this.outerMaxData= const [],
   });
 
   final double radius;
@@ -205,15 +701,26 @@ class MyPieChart extends StatefulWidget {
   final String outerName;
   final String innerName;
 
-  final bool showMaxValues;
-
-  final List<double> innerMaxData;
-  final List<double> outerMaxData;
   @override
   State<MyPieChart> createState() => _MyPieChartState();
 }
 
 class _MyPieChartState extends State<MyPieChart> {
+  double radius = 0;
+  List<double> innerData = [];
+  List<double> outerData = [];
+
+  List<String> outerNameData = [];
+  List<String> innerNameData = [];
+
+  List<Icon> outerIconData = [];
+  List<Icon> innerIconData = [];
+
+  String outerName = '';
+  String innerName = '';
+
+  int dec = 2;
+
   int touchedIndex = -1;
   bool inRadius =
       false; //whether or not the touch event is inside the inner radius
@@ -239,35 +746,124 @@ class _MyPieChartState extends State<MyPieChart> {
 
   bool innerFiller = false; //is there an inner filler section
   bool outerFiller = false; //is there an outer filler section
+  @override
+  void initState() {
+    super.initState();
+    radius = widget.radius;
+    innerData = widget.innerData;
+    outerData = widget.outerData;
+
+    outerNameData = widget.outerNameData;
+    innerNameData = widget.innerNameData;
+
+    outerIconData = widget.outerIconData;
+    innerIconData = widget.innerIconData;
+
+    outerName = widget.outerName;
+    innerName = widget.innerName;
+
+    dec = widget.dec;
+    for (int i = innerData.length - 1; i >= 0; i--) {
+      if (innerData[i] == 0) {
+        innerData = List.from(innerData);
+        innerData.removeAt(i);
+        
+        innerNameData = List.from(innerNameData);
+        innerNameData.removeAt(i);
+        
+        innerIconData = List.from(innerIconData);
+        innerIconData.removeAt(i);
+      }
+    }
+    for (int i = outerData.length - 1; i >= 0; i--) {
+      if (outerData[i] == 0) {
+        outerData = List.from(outerData);
+        outerData.removeAt(i);
+        
+        outerNameData = List.from(outerNameData);
+        outerNameData.removeAt(i);
+        
+        outerIconData = List.from(outerIconData);
+        outerIconData.removeAt(i);
+      }
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MyPieChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    radius = widget.radius;
+    innerData = widget.innerData;
+    outerData = widget.outerData;
+
+    outerNameData = widget.outerNameData;
+    innerNameData = widget.innerNameData;
+
+    outerIconData = widget.outerIconData;
+    innerIconData = widget.innerIconData;
+
+    outerName = widget.outerName;
+    innerName = widget.innerName;
+
+    dec = widget.dec;
+    //cut zeros//messes up indexing for some reason
+    
+    for (int i = innerData.length - 1; i >= 0; i--) {
+      if (innerData[i] == 0) {
+        innerData = List.from(innerData);
+        innerData.removeAt(i);
+        
+        innerNameData = List.from(innerNameData);
+        innerNameData.removeAt(i);
+        
+        innerIconData = List.from(innerIconData);
+        innerIconData.removeAt(i);
+      }
+    }
+    for (int i = outerData.length - 1; i >= 0; i--) {
+      if (outerData[i] == 0) {
+        outerData = List.from(outerData);
+        outerData.removeAt(i);
+        
+        outerNameData = List.from(outerNameData);
+        outerNameData.removeAt(i);
+        
+        outerIconData = List.from(outerIconData);
+        outerIconData.removeAt(i);
+      }
+    }
+
+    innerLength = innerData.length;
+    outerLength = outerData.length;
+
+  }
 
   void _addFillerSection(bool isInner, double val) {
     setState(() {
-      if (!widget.showMaxValues) {
-        if (isInner == true) {
-          //add to inner //overbudget
-          innerFiller = true;
-          outerFiller = false;
-          innerSections.add(
-            PieChartSectionData(
-              showTitle: false,
-              value: val,
-              color: const Color.fromARGB(70, 255, 18, 1),
-              radius: widget.radius * 4 * 0.6,
-            ),
-          );
-        } else {
-          // add to outer //underbudget
-          outerFiller = true;
-          innerFiller = false;
-          outerSections.add(
-            PieChartSectionData(
-              showTitle: false,
-              value: val,
-              color: const Color.fromARGB(160, 157, 255, 132),
-              radius: widget.radius * 4 * 0.6,
-            ),
-          );
-        }
+      if (isInner == true) {
+        //add to inner //overbudget
+        innerFiller = true;
+        outerFiller = false;
+        innerSections.add(
+          PieChartSectionData(
+            showTitle: false,
+            value: val,
+            color: const Color.fromARGB(70, 255, 18, 1),
+            radius: radius * 4 * 0.6,
+          ),
+        );
+      } else {
+        // add to outer //underbudget
+        outerFiller = true;
+        innerFiller = false;
+        outerSections.add(
+          PieChartSectionData(
+            showTitle: false,
+            value: val,
+            color: const Color.fromARGB(160, 157, 255, 132),
+            radius: radius * 4 * 0.6,
+          ),
+        );
       }
     });
   }
@@ -277,17 +873,18 @@ class _MyPieChartState extends State<MyPieChart> {
     super.didChangeDependencies();
     Provider.of<UserProvider>(context);
 
-    innerSum = widget.innerData.fold(
+    innerSum = innerData.fold(
       0,
       (previousValue, element) => previousValue + element,
     );
-    outerSum = widget.outerData.fold(
+    outerSum = outerData.fold(
       0,
       (previousValue, element) => previousValue + element,
     );
-
-    innerLength = widget.innerData.length;
-    outerLength = widget.outerData.length;
+    
+    innerLength = innerData.length;
+    outerLength = outerData.length;
+    
 
     if (innerSum != outerSum) {
       diff = (innerSum - outerSum).abs();
@@ -318,8 +915,8 @@ class _MyPieChartState extends State<MyPieChart> {
         final dy = touchPosition.dy - center.dy;
         final distanceFromCenter = sqrt((dx * dx) + (dy * dy));
 
-        inRadius = distanceFromCenter < 9.9 * widget.radius;
-        outRadius = distanceFromCenter > 15 * widget.radius;
+        inRadius = distanceFromCenter < 9.9 * radius;
+        outRadius = distanceFromCenter > 15 * radius;
 
         if (prevTouchPos != touchPosition) {
           oneTouch = true;
@@ -337,21 +934,21 @@ class _MyPieChartState extends State<MyPieChart> {
 
   Widget _innerPieChart() {
     //premake sections:
-    print(widget.innerMaxData);
-    print(widget.innerData);
-    List<PieChartSectionData> combined = [];
-    
-    List<PieChartSectionData>listA = [for (int i = 0; i < innerLength; i++)
-      PieChartSectionData(
+
+    innerSections = [
+      for (int i = 0; i < innerLength; i++)
+        PieChartSectionData(
           showTitle: false,
-          badgeWidget: widget.innerIconData[i],
+          badgeWidget: Transform.scale(
+            scale: radius / 10,
+            child: innerIconData[i],
+          ),
 
-          value: widget.innerData[i],
+          value: innerData[i],
 
-          
-          color: Color.fromARGB(255, 255 - (i * 20), 200, 0),
+          color: Color.fromARGB(255, 255 - (i * 30), 200 - (i * 5), 0),
           radius:
-              widget.radius *
+              radius *
               4 *
               ((!inRadius)
                   ? 1
@@ -360,30 +957,9 @@ class _MyPieChartState extends State<MyPieChart> {
                   : (prevTouchIndex == i)
                   ? 1.4
                   : 1),
-        ), 
+        ),
     ];
 
-    List<PieChartSectionData> listB = widget.showMaxValues
-    ? [
-      for (int i = 0; i < innerLength; i++)
-      PieChartSectionData(
-          showTitle: false,
-
-          value: widget.innerData[i]-widget.innerMaxData[i],
-
-          color: Color.fromARGB(100, 255 - (i * 20), 200, 0),
-          radius: widget.radius * 4 
-        ), 
-    ]
-    :[];
-
-    for (int i = 0; i < listA.length; i++) {
-      if (i < listB.length) combined.add(listB[i]);
-      combined.add(listA[i]);
-      
-    }
-     
-    innerSections = combined;
     if (diff != -1 && innerSum < outerSum) {
       _addFillerSection(true, diff);
     }
@@ -400,7 +976,7 @@ class _MyPieChartState extends State<MyPieChart> {
               _handlePieTouch(event, pieTouchResponse);
             },
           ),
-          centerSpaceRadius: 6 * widget.radius,
+          centerSpaceRadius: 6 * radius,
           sectionsSpace: 0,
           sections: innerSections,
         ),
@@ -410,16 +986,18 @@ class _MyPieChartState extends State<MyPieChart> {
 
   Widget _outerPieChart() {
     //premake sections:
+    print(outerIconData);
     outerSections = [
       for (int i = 0; i < outerLength; i++)
         PieChartSectionData(
           showTitle: false,
-          badgeWidget: widget.outerIconData[i],
-          value: widget.outerData[i],
+          
+          badgeWidget: outerIconData[i],
+          value: outerData[i],
 
           color: Color.fromARGB(255, 255 - (i * 15), 130 - (i * 10), 0),
           radius:
-              widget.radius *
+              radius *
               4 *
               ((outRadius)
                   ? 1
@@ -446,7 +1024,7 @@ class _MyPieChartState extends State<MyPieChart> {
             _handlePieTouch(event, pieTouchResponse);
           },
         ),
-        centerSpaceRadius: 9.9 * widget.radius,
+        centerSpaceRadius: 9.9 * radius,
         sectionsSpace: 0,
 
         sections: outerSections,
@@ -455,7 +1033,7 @@ class _MyPieChartState extends State<MyPieChart> {
   }
 
   Widget _centerText() {
-    final String chartName = inRadius ? widget.innerName : widget.outerName;
+    final String chartName = inRadius ? innerName : outerName;
 
     final String summary = (innerSum == outerSum)
         ? 'On Budget'
@@ -465,23 +1043,24 @@ class _MyPieChartState extends State<MyPieChart> {
 
     String centerTitle = outRadius ? summary : chartName;
 
-    String net = (innerSum - outerSum).abs().toStringAsFixed(widget.dec);
+    String net = (innerSum - outerSum).abs().toStringAsFixed(dec);
     String centerSubtitle = (innerSum == outerSum && outRadius)
         ? ''
         : outRadius
         ? '\$$net'
         : (inRadius)
-        ? '\$${innerSum.toStringAsFixed(widget.dec)}'
-        : '\$${outerSum.toStringAsFixed(widget.dec)}';
+        ? '\$${innerSum.toStringAsFixed(dec)}'
+        : '\$${outerSum.toStringAsFixed(dec)}';
 
     if (toggleOn == true && prevTouchIndex != -1) {
+      print(outerNameData);
       final String sliceName = inRadius
-          ? widget.innerNameData[prevTouchIndex]
-          : widget.outerNameData[prevTouchIndex];
+          ? innerNameData[prevTouchIndex]
+          : outerNameData[prevTouchIndex];
 
       final String sliceAmount = inRadius
-          ? widget.innerData[prevTouchIndex].toStringAsFixed(widget.dec)
-          : widget.outerData[prevTouchIndex].toStringAsFixed(widget.dec);
+          ? innerData[prevTouchIndex].toStringAsFixed(dec)
+          : outerData[prevTouchIndex].toStringAsFixed(dec);
       centerTitle = outRadius ? summary : sliceName;
       centerSubtitle = outRadius ? '\$$net' : '\$$sliceAmount';
     }
@@ -505,8 +1084,8 @@ class _MyPieChartState extends State<MyPieChart> {
     });
 
     return SizedBox(
-      width: 10 * widget.radius,
-      height: 10 * widget.radius,
+      width: 10 * radius,
+      height: 10 * radius,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
 
@@ -516,11 +1095,11 @@ class _MyPieChartState extends State<MyPieChart> {
             centerTitle,
             textAlign: TextAlign.center,
             maxLines: 2,
-            maxFontSize: 3 * widget.radius,
-            minFontSize: widget.radius,
+            maxFontSize: 3 * radius,
+            minFontSize: radius,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 2 * widget.radius,
+              fontSize: 2 * radius,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -529,11 +1108,11 @@ class _MyPieChartState extends State<MyPieChart> {
             centerSubtitle,
             textAlign: TextAlign.center,
             maxLines: 1,
-            maxFontSize: 3 * widget.radius,
-            minFontSize: widget.radius,
+            maxFontSize: 3 * radius,
+            minFontSize: radius,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 1.5 * widget.radius,
+              fontSize: 1.5 * radius,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -546,8 +1125,8 @@ class _MyPieChartState extends State<MyPieChart> {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        height: widget.radius * 30,
-        width: widget.radius * 30,
+        height: radius * 30,
+        width: radius * 30,
         child: Stack(
           alignment: Alignment.center,
           children: [_outerPieChart(), _innerPieChart(), _centerText()],

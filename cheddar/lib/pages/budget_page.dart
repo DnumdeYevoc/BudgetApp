@@ -1,10 +1,11 @@
+
 import 'package:flutter/material.dart';
 import 'package:cheddar/ui_elements.dart';
-import 'package:flutter_iconpicker/Models/configuration.dart';
+import 'package:flutter/services.dart';
+
 import 'package:provider/provider.dart';
 import 'package:cheddar/user_provider.dart';
 
-import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
 class BudgetPage extends StatefulWidget {
   const BudgetPage({super.key});
@@ -14,178 +15,114 @@ class BudgetPage extends StatefulWidget {
 }
 
 class _BudgetPageState extends State<BudgetPage> {
-  bool selectedType = true;
-  final TextEditingController categoryNameController = TextEditingController();
-  final TextEditingController categoryAmountController = TextEditingController();
-  Icon categoryIcon = Icon(Icons.monetization_on);
-  String categoryIconName = 'monetization_on';
-  Future<void> _pickIcon() async {
-    IconPickerIcon? result = await showIconPicker(
-      context,
-      
-      configuration: SinglePickerConfiguration(
-        showSearchBar: true,
-        showTooltips: true,
-        iconPackModes: [IconPack.material],
-        
-      ),
-    );
-    if (!mounted)return;
-
-    if (result != null ){
-        setState(() {
-          categoryIcon = Icon(result.data);
-          categoryIconName = result.name;
-        });
-      }
-     else{
-      setState(() {
-      categoryIcon = Icon(Icons.monetization_on);
-      categoryIconName = 'monetization_on';},
-      );
-    }
-  }
-  
   @override
   Widget build(BuildContext context) {
     final Budget budget = context.watch<UserProvider>().curBudget;
-    return Scaffold(//add floating button
-      appBar: AppBar(
-        title: MyHeaderTitle(),
-        actions: [
-          IconButton(
-            onPressed:(){print('pressed');}, 
-            icon: Icon(Icons.add, 
-            size: 40,
-            color: Theme.of(context).colorScheme.onSurface,),
-            alignment: Alignment.center,)
-        ],
-        ),
-        
-      floatingActionButton: FloatingActionButton(onPressed:(){
-        showModalBottomSheet(
-          isScrollControlled: true,
-          context: context,
-          builder: (context) {
-            return StatefulBuilder(
-              builder: (context, setModalState) {
-                
-                return Padding(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 20, left:20, right: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 10,
-                    children: [
-                      Text('Add Category',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface
-                        ),
-                      ),
-                
-                      //exp or inc
-                      SegmentedButton<bool>(
-                        emptySelectionAllowed: false,
-                        segments: const [
-                          ButtonSegment<bool>(value: true, label: Text('Income')),
-                          ButtonSegment<bool>(value: false, label: Text('Expense')),
-                        ],
-                        selected: {selectedType},
-                        onSelectionChanged: (Set<bool> newSelection) {
-                          setModalState(() {
-                            selectedType = newSelection.first;
-                          });
-                        },
-                      ),
-                
-                      Row(//name selector
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: 30,
-                        children: [
-                          Text('Name'),
-                          SizedBox(
-                            width: 100,
-                            height: 40,
-                            child: TextField(//Category Name
-                              
-                              controller: categoryNameController,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                
-                      Row(//budget amount selector
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: 18,
-                        children: [
-                          Text('Amount'),
-                          SizedBox(
-                            width: 100,
-                            height: 40,
-                            child: TextField(//Category amount
-                              keyboardType: TextInputType.number,
-                              controller: categoryAmountController,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Row(//pick Icon
-                        spacing: 20,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text('Icon'),
-                          IconButton(onPressed: (){_pickIcon();}, icon: categoryIcon, iconSize: 30),
-                        ],
-                      ),
-
-                      ElevatedButton(
-                        onPressed: (){//save all the values   
-                          double val = double.tryParse(categoryAmountController.text)?? -1;
-                          if (categoryNameController.text!= ''&& val!=-1 && val!= 0 ){                                                
-                            context.read<UserProvider>().addCategory(
-                              isInc: selectedType,
-                              date: budget.budgetDate,
-                              icon: categoryIcon,
-                              iconName: categoryIconName,                            
-                              name: categoryNameController.text,
-                              value: val                          
-                            );
-                            Navigator.pop(context);
-                          } else {
-                            //add some sort of error?
-                          }
-                          
-                        },
-                        child: Text('Save')
-                      ),
-                      SizedBox(height:20),//spacer
-                    ],
-                  ),
-                );
+    final createNeWBudgetNameController = TextEditingController();
+    return Scaffold(
+      floatingActionButton: Align(
+        alignment:AlignmentGeometry.centerRight,
+        child: Padding(
+          padding: EdgeInsetsGeometry.only(top:135),
+          child: FloatingActionButton(onPressed:(){
+            showModalBottomSheet(
+              isScrollControlled: true,
+              context: context,
+              builder: (context) {
+                return MyBottomSheetBuilder(title:'Add Category', edit: false);
               },
             );
-          },
-        );
-        },
-        backgroundColor: const Color.fromARGB(255, 207, 186, 0),
-        child: Icon(Icons.add),
+            },
+            backgroundColor: const Color.fromARGB(255, 207, 186, 0),
+          
+            child: Icon(Icons.add),
+            ),
         ),
-
+      ),
+    
       body: Column(
+        
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          SizedBox(height: 30,),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DropdownMenu( 
+                width: 200, 
+                label: Text('Current Budget'),
+                initialSelection: budget.budgetDate,
+                
+                dropdownMenuEntries: context.watch<UserProvider>().budgetNames.map<DropdownMenuEntry<String>>((String name){
+                  
+                  return DropdownMenuEntry(value: name, label: name);
+                }).toList(),
+                onSelected:(value) {
+                  if (value != null) {
+                    context.read<UserProvider>().setBudgetData(date: value);
+                  }
+                },
+                ),
+              IconButton(onPressed: (){
+                //create new budget
+                showDialog(context: context, 
+                builder: (BuildContext context){
+                  return AlertDialog(
+                    title: Text("Create New Budget", style: TextStyle(fontSize:20,fontWeight: FontWeight.bold ),),
+                    content: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Name: '),
+                        SizedBox(
+                          width: 120,
+                          child: Transform.scale(scale:0.8,
+                            child: TextField(
+                              controller: createNeWBudgetNameController,
+                              decoration: const InputDecoration(
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      Center(
+                        child: ElevatedButton(onPressed: (){
+                          context.read<UserProvider>().setBudgetData(date: createNeWBudgetNameController.text);
+                          
+                          Navigator.pop(context);
+                        }, child: Text('Create')),
+                      )
+                    ],
+                  );
+                  
+                });
+                
+              }, icon: Icon(Icons.add)),
+              IconButton(onPressed: (){
+                //create new budget
+                showDialog(context: context, 
+                builder: (BuildContext context){
+                  return AlertDialog(
+                    title: Text("Are you sure you want to delete \"${budget.budgetDate}?\"", 
+                    style: TextStyle(fontSize:20,fontWeight: FontWeight.bold ),),
+                    
+                    actions: [
+                      Center(
+                        child: ElevatedButton(onPressed: (){
+                          context.read<UserProvider>().deleteBudget(date: budget.budgetDate);
+                          
+                          Navigator.pop(context);
+                        }, child: Text('Delete', style: TextStyle(color: Colors.red,))),
+                      )
+                    ],
+                  );
+                });
+              },icon: Icon(Icons.remove))
+            ],
+          ),
           MyPieChart(
                   innerData: budget.inc.values,
                   innerName: 'Income',
@@ -195,8 +132,8 @@ class _BudgetPageState extends State<BudgetPage> {
                   outerName: 'Expenses',
                   outerNameData: budget.exp.names,
                   outerIconData: budget.exp.icons,
-                  radius: 10,
-                  showMaxValues: false,
+                  radius: 9,
+                 
                 ),
           MyCategoryList(names: budget.inc.names, icons: budget.inc.icons, values: budget.inc.values, showCurrentValues: false, isInc: true),
           MyCategoryList(names: budget.exp.names, icons: budget.exp.icons, values: budget.exp.values, showCurrentValues: false, isInc: false)

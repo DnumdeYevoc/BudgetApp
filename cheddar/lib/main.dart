@@ -2,6 +2,7 @@ import 'package:cheddar/user_provider.dart';
 import 'package:cheddar/widget_tree.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:provider/provider.dart';
 
@@ -38,6 +39,9 @@ class MainApp extends StatelessWidget {
             brightness: Brightness.light,
           ),
           iconTheme: IconThemeData(color: Colors.black45),
+          appBarTheme: const AppBarThemeData( 
+          systemOverlayStyle: SystemUiOverlayStyle(statusBarColor:Color.fromARGB(221, 187, 176, 97), ),),
+
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             backgroundColor: Colors.black87,
             selectedItemColor: Colors.yellow,
@@ -52,6 +56,9 @@ class MainApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           iconTheme: IconThemeData(color: Colors.white60),
+          appBarTheme: const AppBarThemeData( 
+          systemOverlayStyle: SystemUiOverlayStyle(statusBarColor:Colors.black87, ),),
+
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
             backgroundColor: Colors.black87,
             selectedItemColor: Colors.yellow,
