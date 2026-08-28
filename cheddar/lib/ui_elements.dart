@@ -767,10 +767,10 @@ class _MyPieChartState extends State<MyPieChart> {
       if (innerData[i] == 0) {
         innerData = List.from(innerData);
         innerData.removeAt(i);
-        
+
         innerNameData = List.from(innerNameData);
         innerNameData.removeAt(i);
-        
+
         innerIconData = List.from(innerIconData);
         innerIconData.removeAt(i);
       }
@@ -779,10 +779,10 @@ class _MyPieChartState extends State<MyPieChart> {
       if (outerData[i] == 0) {
         outerData = List.from(outerData);
         outerData.removeAt(i);
-        
+
         outerNameData = List.from(outerNameData);
         outerNameData.removeAt(i);
-        
+
         outerIconData = List.from(outerIconData);
         outerIconData.removeAt(i);
       }
@@ -807,15 +807,15 @@ class _MyPieChartState extends State<MyPieChart> {
 
     dec = widget.dec;
     //cut zeros//messes up indexing for some reason
-    
+
     for (int i = innerData.length - 1; i >= 0; i--) {
       if (innerData[i] == 0) {
         innerData = List.from(innerData);
         innerData.removeAt(i);
-        
+
         innerNameData = List.from(innerNameData);
         innerNameData.removeAt(i);
-        
+
         innerIconData = List.from(innerIconData);
         innerIconData.removeAt(i);
       }
@@ -824,10 +824,10 @@ class _MyPieChartState extends State<MyPieChart> {
       if (outerData[i] == 0) {
         outerData = List.from(outerData);
         outerData.removeAt(i);
-        
+
         outerNameData = List.from(outerNameData);
         outerNameData.removeAt(i);
-        
+
         outerIconData = List.from(outerIconData);
         outerIconData.removeAt(i);
       }
@@ -835,7 +835,6 @@ class _MyPieChartState extends State<MyPieChart> {
 
     innerLength = innerData.length;
     outerLength = outerData.length;
-
   }
 
   void _addFillerSection(bool isInner, double val) {
@@ -881,10 +880,9 @@ class _MyPieChartState extends State<MyPieChart> {
       0,
       (previousValue, element) => previousValue + element,
     );
-    
+
     innerLength = innerData.length;
     outerLength = outerData.length;
-    
 
     if (innerSum != outerSum) {
       diff = (innerSum - outerSum).abs();
@@ -991,7 +989,7 @@ class _MyPieChartState extends State<MyPieChart> {
       for (int i = 0; i < outerLength; i++)
         PieChartSectionData(
           showTitle: false,
-          
+
           badgeWidget: outerIconData[i],
           value: outerData[i],
 
@@ -1132,6 +1130,138 @@ class _MyPieChartState extends State<MyPieChart> {
           children: [_outerPieChart(), _innerPieChart(), _centerText()],
         ),
       ),
+    );
+  }
+}
+
+//TODO make tiles for transactions
+
+//need to be usable for clicking on catgories in homepage and listing unfiltered ones in transaction page
+class MyTransactionList extends StatefulWidget {
+  const MyTransactionList({
+    super.key,
+
+    //reuquired
+    required this.names,
+    required this.values,
+    required this.budgets,
+    required this.categories,
+
+
+    required this.oneCategory,
+    this.categoryName ='',
+  });
+  final List<String> names;
+  final List<String> budgets;
+  final List<String> categories;
+
+  final List<double> values;
+
+  final bool oneCategory;
+  final String categoryName;
+
+
+
+  @override
+  State<MyTransactionList> createState() => _MyTransactionListState();
+}
+
+class _MyTransactionListState extends State<MyTransactionList> {
+  List<String> names = [];
+  List<String> budgets = [];
+  List<String> categories = [];
+
+  List<double> values = [];
+
+  bool oneCategory = false;
+
+
+  String categoryName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize it once from the widget
+    names = widget.names;
+    budgets = widget.budgets;
+    values = widget.values;
+    categories = widget.categories;
+    oneCategory = widget.oneCategory;
+
+    categoryName = widget.categoryName;
+  }
+
+  @override
+  void didUpdateWidget(covariant MyTransactionList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    names = widget.names;
+    budgets = widget.budgets;
+    values = widget.values;
+    categories = widget.categories;
+    oneCategory = widget.oneCategory;
+
+    categoryName = widget.categoryName;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (oneCategory){
+      for(int i = 0; i < categories.length; i++){
+        if (categories[i]!= categoryName){
+          names.removeAt(i);
+          budgets.removeAt(i);
+          values.removeAt(i);
+          categories.removeAt(i);
+      
+          
+        }
+      }
+    }
+    return ListView.builder(
+      scrollDirection: Axis.vertical,
+      itemCount: values.length,
+      padding: const EdgeInsets.only(top: 30, left: 6, right: 6, bottom: 6),
+      itemBuilder: (BuildContext context, int index) {
+        return SizedBox(
+          height: 80,
+          
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            elevation: 5,
+            
+            child: Container(
+              decoration: BoxDecoration(border: Border(left: BorderSide(width: 10, color: (values[index]>0)?Colors.green:Colors.red))),
+              child: ListTile(
+                
+                leading: (oneCategory)
+                ? SizedBox(width: 0)//if just showing values from one category no need for labels
+                :SizedBox(
+                  width: 100,
+                  
+                  child: (budgets[index] == 'null')
+                      ? IconButton(
+                          onPressed: () {
+                            print('pressed');
+                          },
+                          icon: Icon(Icons.question_mark),
+                        )
+                      : Column(
+                        mainAxisAlignment: MainAxisAlignment.center, 
+                        children: [
+                          AutoSizeText('Budget: ${budgets[index]}', maxLines: 1,minFontSize: 15, maxFontSize: 30,),
+                          AutoSizeText('Category: ${categories[index]}', maxLines: 1,minFontSize: 5, maxFontSize: 20,),
+                        ]),
+                ),
+                title: AutoSizeText(names[index], maxLines: 1),
+                subtitle: AutoSizeText(
+                  "${(values[index]>0)?'+': '-'}\$${(values[index].abs()).toStringAsFixed(2)}",
+                  maxLines: 1,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

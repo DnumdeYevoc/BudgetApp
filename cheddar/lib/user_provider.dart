@@ -370,6 +370,25 @@ class UserProvider extends ChangeNotifier {
     budgetIndex = 0;
     setBudgetData(date: budgetNames[budgetIndex]);
    }
+
+   //transactions
+  Future<List<Transaction>> loadTransactions({required String budget, required String cat})async{
+
+    final ref = FirebaseFirestore.instance.collection('users').doc(email).collection('Transactions').doc(budget);
+
+    List<Transaction> categoryTransactions = [];
+
+    final snap = await ref.get();
+    if (snap.exists){
+      Map<String, dynamic> transactionData = snap.data() as Map<String, dynamic>;
+      List categoryData= transactionData[cat];
+      for (int i =0 ; i < categoryData.length ; i ++){
+        categoryTransactions.add(Transaction(data: categoryData[i]));
+      }
+    }
+    return categoryTransactions;
+   }
+
 }
 
 class Budget {
@@ -436,4 +455,32 @@ class Incomes {
     required this.values,
     required this.curValues,
   });
+}
+
+class Transaction {
+  final String data;
+
+  //initalize values, set immidately later
+  String name = 'null';
+  double value = 0;
+  int id = 0;
+
+  late final List<String> splitData;
+
+  Transaction({required this.data}) {
+
+    setVarFromData(data);
+    
+  }
+
+  void setVarFromData(String d){
+    splitData = d.split("::");
+
+    name = splitData[0];
+    value = double.tryParse(splitData[1])?? -1;
+    id = int.tryParse(splitData[2])?? -1;
+    print(name);
+    print(value);
+    print(id);
+  }
 }
