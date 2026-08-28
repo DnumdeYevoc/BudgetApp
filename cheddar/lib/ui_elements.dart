@@ -1134,7 +1134,6 @@ class _MyPieChartState extends State<MyPieChart> {
   }
 }
 
-//TODO make tiles for transactions
 
 //need to be usable for clicking on catgories in homepage and listing unfiltered ones in transaction page
 class MyTransactionList extends StatefulWidget {
@@ -1144,7 +1143,7 @@ class MyTransactionList extends StatefulWidget {
     //reuquired
     required this.names,
     required this.values,
-    required this.budgets,
+    
     required this.categories,
 
 
@@ -1152,7 +1151,7 @@ class MyTransactionList extends StatefulWidget {
     this.categoryName ='',
   });
   final List<String> names;
-  final List<String> budgets;
+  
   final List<String> categories;
 
   final List<double> values;
@@ -1168,7 +1167,7 @@ class MyTransactionList extends StatefulWidget {
 
 class _MyTransactionListState extends State<MyTransactionList> {
   List<String> names = [];
-  List<String> budgets = [];
+  
   List<String> categories = [];
 
   List<double> values = [];
@@ -1183,7 +1182,7 @@ class _MyTransactionListState extends State<MyTransactionList> {
     super.initState();
     // Initialize it once from the widget
     names = widget.names;
-    budgets = widget.budgets;
+    
     values = widget.values;
     categories = widget.categories;
     oneCategory = widget.oneCategory;
@@ -1195,7 +1194,7 @@ class _MyTransactionListState extends State<MyTransactionList> {
   void didUpdateWidget(covariant MyTransactionList oldWidget) {
     super.didUpdateWidget(oldWidget);
     names = widget.names;
-    budgets = widget.budgets;
+    
     values = widget.values;
     categories = widget.categories;
     oneCategory = widget.oneCategory;
@@ -1209,7 +1208,7 @@ class _MyTransactionListState extends State<MyTransactionList> {
       for(int i = 0; i < categories.length; i++){
         if (categories[i]!= categoryName){
           names.removeAt(i);
-          budgets.removeAt(i);
+          
           values.removeAt(i);
           categories.removeAt(i);
       
@@ -1238,7 +1237,7 @@ class _MyTransactionListState extends State<MyTransactionList> {
                 :SizedBox(
                   width: 100,
                   
-                  child: (budgets[index] == 'null')
+                  child: (categories[index] == '')
                       ? IconButton(
                           onPressed: () {
                             print('pressed');
@@ -1248,7 +1247,6 @@ class _MyTransactionListState extends State<MyTransactionList> {
                       : Column(
                         mainAxisAlignment: MainAxisAlignment.center, 
                         children: [
-                          AutoSizeText('Budget: ${budgets[index]}', maxLines: 1,minFontSize: 15, maxFontSize: 30,),
                           AutoSizeText('Category: ${categories[index]}', maxLines: 1,minFontSize: 5, maxFontSize: 20,),
                         ]),
                 ),
